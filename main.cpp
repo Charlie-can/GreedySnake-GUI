@@ -19,13 +19,13 @@
 
 
 
-
 char map[HEIGHT][WIDTH] = { 0 };
 int fed = 0;
 int fedNum = -1;
+int speed = SPEED;
+
 time_t timep;
 time_t sratTimeStamp;
-int speed = SPEED;
 
 HANDLE mutex = NULL;
 HANDLE gameHandleP1 = NULL, gameHandleP2 = NULL;
@@ -42,25 +42,29 @@ typedef struct snakeStruct
 
 }snake;
 
-
-snake* snakeHead;
-snake* snakeHeadP2;
-
-
-struct setting {
+typedef struct {
 	int tonTen[10];   //前十
 	bool difficultyIncreasing;  //是否难度递增
+	bool showBackGround;		//是否显示背景竖线
 	int speed;					//速度
 	int width;					//地图宽度
 	int height;					//地图高度
 	int blockSize;				//方块大小
 
-};
+}Setting;
 
 typedef struct {
 	COLORREF color;
 	snake* snakePoints;
 }drawSnake;
+
+
+snake* snakeHead;
+snake* snakeHeadP2;
+Setting settings;
+
+
+
 
 void initMap() {
 
@@ -113,68 +117,29 @@ void initLine() {
 		{
 			if (map[i][j] == '#') {
 				setfillcolor(RGB(183, 213, 239));
-				solidrectangle(j * 25, i * 25, (j + 1) * 25, (i + 1) * 25);
+				solidrectangle(j * BLOCKSIZE, i * BLOCKSIZE, (j + 1) * BLOCKSIZE, (i + 1) * BLOCKSIZE);
 			}
 		}
-
-
 	}
-
 	for (int i = BLOCKSIZE; i < x + 1; i += BLOCKSIZE)
 	{
 		line(i, 0, i, y);
+
+
 	}
 	//X轴竖线
+
 
 
 	for (int i = BLOCKSIZE; i < y; i += BLOCKSIZE)
 	{
 		line(0, i, x, i);
+
 	}
 	//Y轴横线
+
+	return;
 }
-
-
-//void initSnake() {
-//
-//	snakeHead = (snake*)malloc(sizeof(snake));
-//	snakeHead->x = 5;
-//	snakeHead->y = 5;
-//	snakeHead->next = NULL;
-//
-//	snake* snakeBody = (snake*)malloc(sizeof(snake));
-//	snakeHead->next = snakeBody;
-//	snakeBody->x = snakeHead->x - 1;
-//	snakeBody->y = snakeHead->y;
-//	snakeBody->next = NULL;
-//
-//	snakeBody = (snake*)malloc(sizeof(snake));
-//
-//	snakeHead->next->next = snakeBody;
-//	snakeBody->x = snakeHead->next->x - 1;
-//	snakeBody->y = snakeHead->next->y;
-//	snakeBody->next = NULL;
-//
-//	//显示蛇头蛇身
-//	for (snake* snakePoint = snakeHead; snakePoint; snakePoint = snakePoint->next)
-//	{
-//		if (snakePoint == snakeHead) {
-//
-//			setfillcolor(RED);
-//
-//		}
-//		else {
-//			setfillcolor(0xFFFFFF);
-//
-//
-//		}
-//		solidrectangle(((snakePoint->x * 25) + 1), ((snakePoint->y * 25) + 1), (((snakePoint->x + 1) * 25) - 1), (((snakePoint->y + 1) * 25) - 1));
-//
-//
-//	}
-//
-//
-//}
 
 void initSnake(int x) {
 	snake* snakeBody;
@@ -208,7 +173,7 @@ void initSnake(int x) {
 			else {
 				setfillcolor(0xFC5633);
 			}
-			solidrectangle(((snakePoint->x * 25) + 1), ((snakePoint->y * 25) + 1), (((snakePoint->x + 1) * 25) - 1), (((snakePoint->y + 1) * 25) - 1));
+			solidrectangle(((snakePoint->x * BLOCKSIZE) + 1), ((snakePoint->y * BLOCKSIZE) + 1), (((snakePoint->x + 1) * BLOCKSIZE) - 1), (((snakePoint->y + 1) * BLOCKSIZE) - 1));
 
 		}
 
@@ -242,7 +207,7 @@ void initSnake(int x) {
 
 
 			}
-			solidrectangle(((snakePoint->x * 25) + 1), ((snakePoint->y * 25) + 1), (((snakePoint->x + 1) * 25) - 1), (((snakePoint->y + 1) * 25) - 1));
+			solidrectangle(((snakePoint->x * BLOCKSIZE) + 1), ((snakePoint->y * BLOCKSIZE) + 1), (((snakePoint->x + 1) * BLOCKSIZE) - 1), (((snakePoint->y + 1) * BLOCKSIZE) - 1));
 
 		}
 
@@ -251,6 +216,23 @@ void initSnake(int x) {
 	return;
 }
 
+
+void saveSettingsBinary(const Setting* settings) {
+	FILE* file = fopen("settings.bin", "wb");
+	if (file != NULL) {
+		fwrite(settings, sizeof(Setting), 1, file);
+		fclose(file);
+	}
+}
+
+
+void loadSettingsBinary(Setting* settings) {
+	FILE* file = fopen("settings.bin", "rb");
+	if (file != NULL) {
+		fread(settings, sizeof(Setting), 1, file);
+		fclose(file);
+	}
+}
 
 void updateMap(snake* snakePoint, int x) {
 
@@ -284,12 +266,12 @@ void hideSnake(snake* snakePoint, COLORREF bodyColor) {
 		if (snakePoint) {
 
 			setfillcolor(bodyColor);
-			solidrectangle(((snakePoint->x * 25) + 1), ((snakePoint->y * 25) + 1), (((snakePoint->x + 1) * 25) - 1), (((snakePoint->y + 1) * 25) - 1));
+			solidrectangle(((snakePoint->x * BLOCKSIZE) + 1), ((snakePoint->y * BLOCKSIZE) + 1), (((snakePoint->x + 1) * BLOCKSIZE) - 1), (((snakePoint->y + 1) * BLOCKSIZE) - 1));
 
 		}
 	}
 	setfillcolor(0xCAE1A4);
-	solidrectangle(((snakePoint->x * 25) + 1), ((snakePoint->y * 25) + 1), (((snakePoint->x + 1) * 25) - 1), (((snakePoint->y + 1) * 25) - 1));
+	solidrectangle(((snakePoint->x * BLOCKSIZE) + 1), ((snakePoint->y * BLOCKSIZE) + 1), (((snakePoint->x + 1) * BLOCKSIZE) - 1), (((snakePoint->y + 1) * BLOCKSIZE) - 1));
 
 	return;
 }
@@ -311,7 +293,7 @@ void showSnake(snake* snakePoint, COLORREF headColor) {
 	{
 		if (snakePoint == head) {
 			setfillcolor(headColor);
-			solidrectangle(((snakePoint->x * 25) + 1), ((snakePoint->y * 25) + 1), (((snakePoint->x + 1) * 25) - 1), (((snakePoint->y + 1) * 25) - 1));
+			solidrectangle(((snakePoint->x * BLOCKSIZE) + 1), ((snakePoint->y * BLOCKSIZE) + 1), (((snakePoint->x + 1) * BLOCKSIZE) - 1), (((snakePoint->y + 1) * BLOCKSIZE) - 1));
 		}
 	}
 	return;
@@ -463,7 +445,7 @@ void food() {
 
 		map[x][y] = '*';
 		setfillcolor(YELLOW);
-		solidrectangle(((y * 25) + 1), ((x * 25) + 1), (((y + 1) * 25) - 1), (((x + 1) * 25) - 1));
+		solidrectangle(((y * BLOCKSIZE) + 1), ((x * BLOCKSIZE) + 1), (((y + 1) * BLOCKSIZE) - 1), (((x + 1) * BLOCKSIZE) - 1));
 
 		fed = 1;
 		fedNum++;
@@ -476,7 +458,7 @@ void gameBar(bool start,bool multi) {
 
 	settextcolor(0xffffff);
 
-	TCHAR str[25];
+	TCHAR str[BLOCKSIZE];
 	LOGFONT fontSetting;
 	gettextstyle(&fontSetting);						// 获取当前字体设置
 	fontSetting.lfHeight = 27;						// 设置字体高度
@@ -493,9 +475,19 @@ void gameBar(bool start,bool multi) {
 
 
 	if (multi) {
+		_stprintf(str, _T("Game Time:"));
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT, str);
 
+		_stprintf(str, _T("%d"), (nowTime - sratTimeStamp));
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE, str);
 
-		;
+		_stprintf(str, _T("Speed:"));
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 2, str);
+
+		_stprintf(str, _T("%d"), speed);
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 3, str);
+
+		return;
 	}
 
 	if (start) {
@@ -639,7 +631,7 @@ void game()
 			{
 				if (snakePoints == snakeHead) {
 					setfillcolor(0xffffff);
-					solidrectangle(((snakePoints->x * 25) + 1), ((snakePoints->y * 25) + 1), (((snakePoints->x + 1) * 25) - 1), (((snakePoints->y + 1) * 25) - 1));
+					solidrectangle(((snakePoints->x * BLOCKSIZE) + 1), ((snakePoints->y * BLOCKSIZE) + 1), (((snakePoints->x + 1) * BLOCKSIZE) - 1), (((snakePoints->y + 1) * BLOCKSIZE) - 1));
 
 				}
 			}
@@ -766,7 +758,7 @@ DWORD WINAPI gameP1(LPVOID pm) {
 					WaitForSingleObject(mutex, INFINITE);
 
 					setfillcolor(0xffffff);
-					solidrectangle(((snakePoints->x * 25) + 1), ((snakePoints->y * 25) + 1), (((snakePoints->x + 1) * 25) - 1), (((snakePoints->y + 1) * 25) - 1));
+					solidrectangle(((snakePoints->x * BLOCKSIZE) + 1), ((snakePoints->y * BLOCKSIZE) + 1), (((snakePoints->x + 1) * BLOCKSIZE) - 1), (((snakePoints->y + 1) * BLOCKSIZE) - 1));
 
 					ReleaseMutex(mutex);
 					//Sleep(100);
@@ -843,11 +835,6 @@ DWORD WINAPI gameP2(LPVOID pm) {
 		else if (KEY_DOWN('Z'))
 			inputP2 = inputP2;
 
-		/*if (input != 'w' && input != 'a' && input != 's' && input != 'd') {
-			input = lastInput;
-		}*/
-
-
 
 		switch (inputP2)
 		{
@@ -917,7 +904,7 @@ DWORD WINAPI gameP2(LPVOID pm) {
 					//setfillcolor(0xFC5633);
 
 					setfillcolor(0xFC5633);
-					solidrectangle(((snakePointsP2->x * 25) + 1), ((snakePointsP2->y * 25) + 1), (((snakePointsP2->x + 1) * 25) - 1), (((snakePointsP2->y + 1) * 25) - 1));
+					solidrectangle(((snakePointsP2->x * BLOCKSIZE) + 1), ((snakePointsP2->y * BLOCKSIZE) + 1), (((snakePointsP2->x + 1) * BLOCKSIZE) - 1), (((snakePointsP2->y + 1) * BLOCKSIZE) - 1));
 					ReleaseMutex(mutex);
 					//Sleep(100);
 				}
@@ -1026,11 +1013,15 @@ void settingMenu() {
 
 	LOGFONT fontSetting;
 	gettextstyle(&fontSetting);
-
-
-	TCHAR str[25];
+	TCHAR str[BLOCKSIZE];
 	fontSetting.lfHeight = 48;
 	settextstyle(&fontSetting);
+
+
+	loadSettingsBinary(&settings);
+	//读取设置
+
+
 
 	_stprintf(str, _T("设置"));
 	outtextxy(((WIDTH * BLOCKSIZE) / 2) + BLOCKSIZE, (BLOCKSIZE)+BLOCKSIZE * 0.2, str);
@@ -1063,13 +1054,17 @@ void settingMenu() {
 
 
 	}
+	saveSettingsBinary(&settings);
+	//保存文件
+	
+	return;
 }
 
 void initStartMenu() {
 
 	cleardevice();
 	ExMessage input;
-	TCHAR str[25];
+	TCHAR str[BLOCKSIZE];
 	LOGFONT fontSetting;
 
 	gettextstyle(&fontSetting);						// 获取当前字体设置
@@ -1148,8 +1143,6 @@ void initStartMenu() {
 
 
 }
-
-
 
 int main()
 {

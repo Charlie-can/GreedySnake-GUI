@@ -21,5 +21,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+    <None Include="settings.bin">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
