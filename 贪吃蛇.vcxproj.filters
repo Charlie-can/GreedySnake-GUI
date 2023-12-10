@@ -24,5 +24,11 @@
     <None Include="settings.bin">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="ClassDiagram.cd" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="main.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
