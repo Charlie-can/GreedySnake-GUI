@@ -23,7 +23,6 @@ char map[HEIGHT][WIDTH] = { 0 };
 int fed = 0;
 int fedNum = -1;
 int speed = SPEED;
-bool bSnakeP1Continue = 0, bSnakeP2Continue = 0;
 
 time_t timep;
 time_t sratTimeStamp;
@@ -309,7 +308,7 @@ void freeSnake(snake* snakeHead) {
 }
 
 void gameOver(int i) {
-	//哪条蛇调用gameover 和 游戏人数
+
 	ExMessage input;
 	settextcolor(0xffffff);
 
@@ -318,13 +317,9 @@ void gameOver(int i) {
 	settextstyle(35, 0, _T("微软雅黑"));
 	outtextxy(WIDTH * BLOCKSIZE + BLOCKSIZE, (HEIGHT * BLOCKSIZE) - (BLOCKSIZE * 2), L"重新开始");
 	outtextxy(WIDTH * BLOCKSIZE + BLOCKSIZE, (HEIGHT * BLOCKSIZE) - (BLOCKSIZE * 4), L"返回菜单");
-	
-	
-	if (i == 2) {
-		WaitForSingleObject(mutex, INFINITE);
-		
-	}
-	//释放蛇头1
+
+	freeSnake(snakeHead);
+//释放蛇头1
 
 	while (1)
 	{
@@ -338,20 +333,16 @@ void gameOver(int i) {
 			if (((input.x >= (WIDTH * BLOCKSIZE + BLOCKSIZE)) && (input.x <= (WIDTH * BLOCKSIZE + BLOCKSIZE * 5))) && ((input.y >= ((HEIGHT * BLOCKSIZE) - (BLOCKSIZE * 2))) && (input.y <= ((HEIGHT * BLOCKSIZE) - (BLOCKSIZE * 0.8))))) {
 
 				cleardevice();
-				if (i == 1) {
-					freeSnake(snakeHead);
+				if (i == 1)
 					startGame();
-					return;
-				}
-				else {
-					freeSnake(snakeHeadP2);
-					freeSnake(snakeHead);
-					startGameDouble();
-					return;
+				else{
+					TerminateThread(gameHandleP1, 0);
+					TerminateThread(gameHandleP2, 0);
 
-				}
+					freeSnake(snakeHeadP2);
+					startGameDouble();
 					//释放蛇头2
-				
+				}
 
 				return;
 				//重新开始
@@ -359,13 +350,14 @@ void gameOver(int i) {
 			else if (((input.x >= (WIDTH * BLOCKSIZE + BLOCKSIZE)) && (input.x <= (WIDTH * BLOCKSIZE + BLOCKSIZE * 5))) && ((input.y >= ((HEIGHT * BLOCKSIZE) - (BLOCKSIZE * 4))) && (input.y <= ((HEIGHT * BLOCKSIZE) - (BLOCKSIZE * 2) - (BLOCKSIZE * 0.8))))) {
 				
 				if (i == 2){
+					TerminateThread(gameHandleP1, 0);
+					TerminateThread(gameHandleP2, 0);
 					freeSnake(snakeHeadP2);
-
-					ReleaseMutex(mutex);
 				}
 				//释放蛇头1
-				cleardevice();
 
+
+				cleardevice();
 				initStartMenu();
 				return;
 			//返回开始菜单
@@ -382,11 +374,14 @@ void gameOver(int i) {
 			}
 		}
 	}
-	return;
+
+
+
+
+
+
 
 }
-
-
 int isDeath(snake* snakeP1, snake* snakeP2) {
 
 	snake* snakePoint;
@@ -395,14 +390,14 @@ int isDeath(snake* snakeP1, snake* snakeP2) {
 		if (((snakeP1->x == snakePoint->x) && (snakeP1->y == snakePoint->y)) || (snakeP1->x == 0 || snakeP1->x == WIDTH - 1 || snakeP1->y == 0 || snakeP1->y == HEIGHT - 1)) {
 
 			if (snakeP2) {
-				bSnakeP1Continue = 0;
-				bSnakeP2Continue = 0;
-
+				CloseHandle(gameHandleP1);
+				CloseHandle(gameHandleP2);
 				gameOver(2);
+
 			}
 			else
 				gameOver(1);
-			//如果p2为假，证明单人游戏，否者是双人游戏
+
 
 			return 1;
 		}
@@ -413,10 +408,8 @@ int isDeath(snake* snakeP1, snake* snakeP2) {
 		for (snakePoint = snakeP2; snakePoint; snakePoint = snakePoint->next)
 		{
 			if ((snakeP1->x == snakePoint->x) && (snakeP1->y == snakePoint->y)) {
-				
-				bSnakeP1Continue = 0;
-				bSnakeP2Continue = 0;
-
+				CloseHandle(gameHandleP1);
+				CloseHandle(gameHandleP2);
 				gameOver(2);
 				return 1;
 			}
@@ -669,7 +662,7 @@ void game()
 DWORD WINAPI gameP1(LPVOID pm) {
 	char input = 'd', lastInput = 'd';
 	drawSnake drawsnake;
-	while (bSnakeP1Continue)
+	while (1)
 	{
 
 		snake* snakePoint = (snake*)malloc(sizeof(snake));
@@ -811,17 +804,15 @@ DWORD WINAPI gameP1(LPVOID pm) {
 		if (isDeath(snakeHead, snakeHeadP2)) {
 			return 0;
 		}
-
 		ReleaseMutex(mutex);
 
 		lastInput = input;
 	}
-	return 0;
- }
+}
 
 DWORD WINAPI gameP2(LPVOID pm) {
 	int  inputP2 = RIGHT, lastInputP2 = RIGHT;
-	while (bSnakeP2Continue)
+	while (1)
 	{
 
 		snake* snakePointP2 = (snake*)malloc(sizeof(snake));
@@ -1004,26 +995,12 @@ void startGameDouble() {
 
 	mutex = CreateMutex(NULL, FALSE, NULL);
 
-	if (gameHandleP1 != NULL){
-		CloseHandle(gameHandleP1);
-		gameHandleP1 = NULL;
-	}
-	if (gameHandleP2 != NULL){
-		CloseHandle(gameHandleP2);
-		gameHandleP2 = NULL;
-
-	}
-	bSnakeP1Continue = 1;
-	bSnakeP2Continue = 1;
-
 	gameHandleP1 = CreateThread(NULL, 0, gameP1, NULL, 1, NULL);
 	gameHandleP2 = CreateThread(NULL, 0, gameP2, NULL, 1, NULL);
 
 	WaitForSingleObject(gameHandleP1, INFINITE);
 	WaitForSingleObject(gameHandleP2, INFINITE);
 
-	bSnakeP1Continue = 0;
-	bSnakeP2Continue = 0;
 	return;
 }
 
