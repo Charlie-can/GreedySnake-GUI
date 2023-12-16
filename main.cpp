@@ -4,16 +4,20 @@
 void game()
 {
 
+	//初始向右前进
 	char input = 'd', lastInput = 'd';
 	int x = 0, y = 0;
 
 	while (1)
 	{
+		//生成下一个蛇身
 		snake* snakePoint = (snake*)malloc(sizeof(snake));
 		snakePoint->next = snakeHead;
 		snakePoint->x = snakeHead->x;
 		snakePoint->y = snakeHead->y;
 
+
+		//设定刷新时间
 		Sleep(1000 / speed);
 
 		/*	if (KEY_DOWN(65))
@@ -25,7 +29,7 @@ void game()
 			else if (KEY_DOWN(68))
 				input = 'd';*/
 
-
+		//如果按下按键
 		if (kbhit() != 0)
 		{
 			while (!(kbhit() == 0))
@@ -35,12 +39,12 @@ void game()
 		if (input == 'z') {
 			input = input;
 		}
-
+		// 判断按键是否冲突
 		if (input != 'w' && input != 'a' && input != 's' && input != 'd') {
 			input = lastInput;
 		}
 
-
+		//判断按下按键
 		switch (input)
 		{
 
@@ -97,8 +101,10 @@ void game()
 			break;
 		}
 
+		//更新蛇在地图数组中的位置
 		updateMap(snakeHead, 0);
 
+		//如果吃下食物
 		if (map[snakePoint->y][snakePoint->x] == '*') {
 
 			snake* snakePoints;
@@ -115,6 +121,7 @@ void game()
 			map[snakePoint->y][snakePoint->x] = ' ';
 		}
 		else {
+			//没有吃到食物
 
 			hideSnake(snakeHead, 0xffffff);//删除蛇头和蛇尾显示
 			updateSnake(snakeHead);//删除蛇尾
@@ -122,10 +129,11 @@ void game()
 
 		snakeHead = snakePoint;
 		showSnake(snakeHead, RED);//显示新蛇头
-		updateMap(snakeHead, 1);
-		food();
-		gameBar(0,0);
+		updateMap(snakeHead, 1);//更新蛇在地图的位置
+		food();	//进入食物函数刷新食物
+		gameBar(0,0);	//刷新侧边栏
 
+		//判断是否死亡
 		if (isDeath(snakeHead, NULL)) {
 			return;
 		}
@@ -149,6 +157,7 @@ DWORD WINAPI gameP1(LPVOID pm ) {
 
 		Sleep(1000 / speed);
 
+
 		if (KEY_DOWN(65))
 			input = 'a';
 		else if (KEY_DOWN(87))
@@ -159,6 +168,11 @@ DWORD WINAPI gameP1(LPVOID pm ) {
 			input = 'd';
 		else if (KEY_DOWN('Z'))
 			input = input;
+
+		if (KEY_DOWN('J'))
+			Sleep(100);
+
+
 
 		/*if (input != 'w' && input != 'a' && input != 's' && input != 'd') {
 			input = lastInput;
@@ -222,7 +236,30 @@ DWORD WINAPI gameP1(LPVOID pm ) {
 		}
 
 		updateMap(snakeHead, 0);
-		if (map[snakePoint->y][snakePoint->x] == '*') {
+
+
+		if (additionP1 > 0) {
+
+			additionP1--;
+			snake* snakePoints;
+
+			for (snakePoints = snakeHead; snakePoints->next; snakePoints = snakePoints->next)
+			{
+				if (snakePoints == snakeHead) {
+
+					WaitForSingleObject(mutex, INFINITE);
+
+					setfillcolor(0xffffff);
+					solidrectangle(((snakePoints->x * BLOCKSIZE) + 1), ((snakePoints->y * BLOCKSIZE) + 1), (((snakePoints->x + 1) * BLOCKSIZE) - 1), (((snakePoints->y + 1) * BLOCKSIZE) - 1));
+					lengthP1++;
+					ReleaseMutex(mutex);
+					//Sleep(100);
+
+				}
+			}
+		}
+		else if (map[snakePoint->y][snakePoint->x] == '*') {
+
 
 			snake* snakePoints;
 
@@ -242,12 +279,13 @@ DWORD WINAPI gameP1(LPVOID pm ) {
 
 				}
 			}
-			WaitForSingleObject(mutex, INFINITE);
 
+			
+			WaitForSingleObject(mutex, INFINITE);
 			fed = 0;
 			map[snakePoint->y][snakePoint->x] = ' ';
 			ReleaseMutex(mutex);
-
+			
 		}
 		else {
 			WaitForSingleObject(mutex, INFINITE);
@@ -278,6 +316,14 @@ DWORD WINAPI gameP1(LPVOID pm ) {
 		WaitForSingleObject(mutex, INFINITE);
 
 		if (isDeath(snakeHead, snakeHeadP2)==2) {
+			clearSnake(snakeHead);
+			freeSnake(snakeHead);
+			initSnake(1, 0);
+			additionP2 += lengthP1-1;
+			additionP1 = 0;
+			ReleaseMutex(mutex);
+			gameHandleP1 = CreateThread(NULL, 0, gameP1, NULL, 1, NULL);
+			WaitForSingleObject(gameHandleP1, INFINITE);
 			return 0;
 
 		}else if (isDeath(snakeHead, snakeHeadP2)) {
@@ -317,6 +363,9 @@ DWORD WINAPI gameP2(LPVOID pm) {
 			inputP2 = DOWN;
 		else if (KEY_DOWN('Z'))
 			inputP2 = inputP2;
+		
+		if (KEY_DOWN(96))
+			Sleep(100);
 
 
 		switch (inputP2)
@@ -374,8 +423,31 @@ DWORD WINAPI gameP2(LPVOID pm) {
 
 
 		updateMap(snakeHeadP2, 0);
-		//Sleep(100);
-		if (map[snakePointP2->y][snakePointP2->x] == '*') {
+
+
+		if (additionP2 > 0) {
+			additionP2--;
+
+			snake* snakePointsP2;
+
+			for (snakePointsP2 = snakeHeadP2; snakePointsP2->next; snakePointsP2 = snakePointsP2->next)
+			{
+				if (snakePointsP2 == snakeHeadP2) {
+
+					WaitForSingleObject(mutex, INFINITE);
+					//setfillcolor(0xFC5633);
+
+					setfillcolor(0xFC5633);
+					solidrectangle(((snakePointsP2->x * BLOCKSIZE) + 1), ((snakePointsP2->y * BLOCKSIZE) + 1), (((snakePointsP2->x + 1) * BLOCKSIZE) - 1), (((snakePointsP2->y + 1) * BLOCKSIZE) - 1));
+					lengthP2++;
+					ReleaseMutex(mutex);
+					//Sleep(100);
+				}
+			}
+
+
+		}
+		else if (map[snakePointP2->y][snakePointP2->x] == '*') {
 
 			snake* snakePointsP2;
 
@@ -436,7 +508,14 @@ DWORD WINAPI gameP2(LPVOID pm) {
 		
 		{
 			 if(isDeath(snakeHeadP2, snakeHead)==2){
-
+				 clearSnake(snakeHeadP2);
+				 freeSnake(snakeHeadP2);
+				 initSnake(0, 1);
+				 additionP1 += lengthP2-1;
+				 additionP2 = 0;
+				 ReleaseMutex(mutex);
+				 gameHandleP2 = CreateThread(NULL, 0, gameP2, NULL, 1, NULL);
+				 WaitForSingleObject(gameHandleP2, INFINITE);
 				 return 0;
 			 }
 
@@ -451,18 +530,23 @@ DWORD WINAPI gameP2(LPVOID pm) {
 }
 
 void startGame() {
-
+	//创建时间戳记录开始时间
 	sratTimeStamp = time(&timep);
-
+	//随机函数
 	srand(sratTimeStamp);
 
 	fed = 0;
 	fedNum = -1;
 	speed = SPEED;
+	//初始化地图
 	initMap();
+	//初始化地图框线
 	initLine();
-	initSnake(1);
+	//初始化蛇
+	initSnake(1,0);
+	//初始化侧边栏
 	gameBar(1,0);
+	//开始游戏
 	game();
 	return;
 }
@@ -478,7 +562,7 @@ void startGameDouble() {
 
 	initMap();
 	initLine();
-	initSnake(2);
+	initSnake(1,1);
 
 	mutex = CreateMutex(NULL, FALSE, NULL);
 
@@ -507,8 +591,10 @@ void startGameDouble() {
 
 void initStartMenu() {
 
-	isCombat = 0;
+	
 
+	//设置字体等信息
+	isCombat = 0;
 	cleardevice();
 	ExMessage input;
 	TCHAR str[BLOCKSIZE];
@@ -522,6 +608,7 @@ void initStartMenu() {
 	settextstyle(&fontSetting);						// 设置字体样式
 	settextcolor(0xffffff);
 
+	//输出文字
 
 	_stprintf(str, _T("贪吃蛇"));
 	outtextxy(((WIDTH * BLOCKSIZE) / 2) - BLOCKSIZE * 2, (HEIGHT * BLOCKSIZE) / 3, str);
@@ -535,7 +622,7 @@ void initStartMenu() {
 	fillrectangle(((WIDTH * BLOCKSIZE) / 2)+ BLOCKSIZE/2, (HEIGHT * BLOCKSIZE) * 0.7, ((WIDTH * BLOCKSIZE) / 2) + (BLOCKSIZE * 6)- BLOCKSIZE / 2, ((HEIGHT * BLOCKSIZE) * 0.8));
 	fillrectangle(((WIDTH * BLOCKSIZE) / 1.2) - BLOCKSIZE, (HEIGHT * BLOCKSIZE) * 0.7, ((WIDTH * BLOCKSIZE) / 1.2) - BLOCKSIZE + (BLOCKSIZE * 5), ((HEIGHT * BLOCKSIZE) * 0.8));*/
 
-	_stprintf(str, _T("开始游戏"));
+	_stprintf(str, _T("单人游戏"));
 	outtextxy(((WIDTH * BLOCKSIZE) / 4.5), (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 0.2, str);
 
 	//rectangle(((WIDTH * BLOCKSIZE) / 4.5) + (BLOCKSIZE * 6), ((HEIGHT * BLOCKSIZE) * 0.8) + BLOCKSIZE * 0.2, ((WIDTH * BLOCKSIZE) / 4.5),((HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 0.2));
@@ -550,21 +637,23 @@ void initStartMenu() {
 	_stprintf(str, _T("双人游戏"));
 	outtextxy(((WIDTH * BLOCKSIZE) / 4.5), (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 4, str);
 
-	_stprintf(str, _T("蛇蛇争霸"));
-	outtextxy(((WIDTH * BLOCKSIZE) / 2- WIDTH*0.15), (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 4, str);
+	/*_stprintf(str, _T("蛇蛇争霸"));
+	outtextxy(((WIDTH * BLOCKSIZE) / 2- WIDTH*0.15), (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 4, str);*/
 
 	//fillrectangle(((WIDTH * BLOCKSIZE) / 4.5), (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 4, ((WIDTH * BLOCKSIZE) / 4.5)+(BLOCKSIZE*6), ((HEIGHT * BLOCKSIZE) * 0.78 + BLOCKSIZE * 4));
-	rectangle(((WIDTH * BLOCKSIZE) / 2.8) + (BLOCKSIZE * 6), ((HEIGHT * BLOCKSIZE) * 0.8) + BLOCKSIZE *2, ((WIDTH * BLOCKSIZE) / 1.6), (HEIGHT * BLOCKSIZE) * 0.8 + BLOCKSIZE * 0.2);
+	//rectangle(((WIDTH * BLOCKSIZE) / 2.8) + (BLOCKSIZE * 6), ((HEIGHT * BLOCKSIZE) * 0.8) + BLOCKSIZE *2, ((WIDTH * BLOCKSIZE) / 1.6), (HEIGHT * BLOCKSIZE) * 0.8 + BLOCKSIZE * 0.2);
+
+
 
 	while (1)
 	{
 		// 获取按键信息
 		input = getmessage(EX_MOUSE | EX_KEY);
-		_stprintf(str, _T("x:%05d"), input.x);
-				outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE, str);
+		//_stprintf(str, _T("x:%05d"), input.x);
+		//		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE, str);
 
-				_stprintf(str, _T("y:%05d"), input.y);
-				outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 2, str);
+		//		_stprintf(str, _T("y:%05d"), input.y);
+		//		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 2, str);
 		switch (input.message)
 		{
 		case WM_LBUTTONDOWN:
@@ -579,20 +668,24 @@ void initStartMenu() {
 				cleardevice();
 				startGame();
 				return;
+				//单人游戏
 			}
 			else if (((input.x >= ((WIDTH * BLOCKSIZE) / 2) + BLOCKSIZE / 2) && input.x <= (((WIDTH * BLOCKSIZE) / 2) + (BLOCKSIZE * 6) - BLOCKSIZE / 2)) && ((input.y >= ((HEIGHT * BLOCKSIZE) * 0.7) && (input.y <= ((HEIGHT * BLOCKSIZE) * 0.8))))) {
 				settingMenu();
 				initStartMenu();
 			}
+			//设置菜单
 			else if (((input.x >= ((WIDTH * BLOCKSIZE) / 1.2) - BLOCKSIZE) && (input.x <= ((WIDTH * BLOCKSIZE) / 1.2) - BLOCKSIZE + (BLOCKSIZE * 5))) && ((input.y >= (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 0.2) && (input.y <= ((HEIGHT * BLOCKSIZE) * 0.8) + BLOCKSIZE * 0.2))) {
 				exit(0);
 			}
+			//退出游戏
 			else if ((input.x >= ((WIDTH * BLOCKSIZE) / 4.5) && (input.x <= ((WIDTH * BLOCKSIZE) / 4.5) + (BLOCKSIZE * 6))) && ((input.y >= (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 4) && (input.y <= ((HEIGHT * BLOCKSIZE) * 0.78) + BLOCKSIZE * 4))) {
 				cleardevice();
 				isCombat = 0;
 				startGameDouble();
 				return;
 			}
+			//多人游戏
 			else if (((input.x >= ((WIDTH * BLOCKSIZE) / 2) + BLOCKSIZE / 2) && input.x <= (((WIDTH * BLOCKSIZE) / 2) + (BLOCKSIZE * 6) - BLOCKSIZE / 2)) && ((input.y >= ((HEIGHT * BLOCKSIZE) * 0.8 + BLOCKSIZE * 0.2) && (input.y <= ((HEIGHT * BLOCKSIZE) * 0.8) + BLOCKSIZE * 2)))){
 				cleardevice();
 				isCombat = 1;
@@ -607,7 +700,6 @@ void initStartMenu() {
 				return;	// 按 ESC 键退出程序
 		}
 	}
-
 
 }
 
@@ -691,10 +783,12 @@ void gameOver(int x) {
 
 int main()
 {
+	//初始化窗口
 	initWindow();
+	//初始化开始菜单
 	initStartMenu();
+	//关闭窗口
 	closegraph();
-
 
 	return 0;
 }
