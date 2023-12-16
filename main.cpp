@@ -135,9 +135,10 @@ void game()
 	}
 }
 
-DWORD WINAPI gameP1(LPVOID pm) {
+DWORD WINAPI gameP1(LPVOID pm ) {
 	char input = 'd', lastInput = 'd';
 	drawSnake drawsnake;
+	lengthP1 = 3;
 	while (bSnakeP1Continue)
 	{
 
@@ -235,7 +236,7 @@ DWORD WINAPI gameP1(LPVOID pm) {
 
 					setfillcolor(0xffffff);
 					solidrectangle(((snakePoints->x * BLOCKSIZE) + 1), ((snakePoints->y * BLOCKSIZE) + 1), (((snakePoints->x + 1) * BLOCKSIZE) - 1), (((snakePoints->y + 1) * BLOCKSIZE) - 1));
-
+					lengthP1++;
 					ReleaseMutex(mutex);
 					//Sleep(100);
 
@@ -274,11 +275,13 @@ DWORD WINAPI gameP1(LPVOID pm) {
 
 		ReleaseMutex(mutex);
 
-
 		WaitForSingleObject(mutex, INFINITE);
 
-		if (isDeath(snakeHead, snakeHeadP2)) {
+		if (isDeath(snakeHead, snakeHeadP2)==2) {
 			return 0;
+
+		}else if (isDeath(snakeHead, snakeHeadP2)) {
+			 return 0;
 		}
 
 		ReleaseMutex(mutex);
@@ -290,6 +293,8 @@ DWORD WINAPI gameP1(LPVOID pm) {
 
 DWORD WINAPI gameP2(LPVOID pm) {
 	int  inputP2 = RIGHT, lastInputP2 = RIGHT;
+	lengthP2 = 3;
+
 	while (bSnakeP2Continue)
 	{
 
@@ -383,6 +388,7 @@ DWORD WINAPI gameP2(LPVOID pm) {
 
 					setfillcolor(0xFC5633);
 					solidrectangle(((snakePointsP2->x * BLOCKSIZE) + 1), ((snakePointsP2->y * BLOCKSIZE) + 1), (((snakePointsP2->x + 1) * BLOCKSIZE) - 1), (((snakePointsP2->y + 1) * BLOCKSIZE) - 1));
+					lengthP2++;
 					ReleaseMutex(mutex);
 					//Sleep(100);
 				}
@@ -427,8 +433,14 @@ DWORD WINAPI gameP2(LPVOID pm) {
 
 
 		WaitForSingleObject(mutex, INFINITE);
+		
+		{
+			 if(isDeath(snakeHeadP2, snakeHead)==2){
 
-		if (isDeath(snakeHeadP2, snakeHead)) {
+				 return 0;
+			 }
+
+		} if (isDeath(snakeHeadP2, snakeHead)) {
 			return 0;
 		}
 		ReleaseMutex(mutex);
@@ -456,7 +468,6 @@ void startGame() {
 }
 
 void startGameDouble() {
-
 	sratTimeStamp = time(&timep);
 
 	srand(sratTimeStamp);
@@ -496,13 +507,15 @@ void startGameDouble() {
 
 void initStartMenu() {
 
+	isCombat = 0;
+
 	cleardevice();
 	ExMessage input;
 	TCHAR str[BLOCKSIZE];
 	LOGFONT fontSetting;
 
 	gettextstyle(&fontSetting);						// 获取当前字体设置
-	fontSetting.lfHeight = 100;						// 设置字体高度
+	fontSetting.lfHeight = BLOCKSIZE*4;						// 设置字体高度
 	fontSetting.lfWeight = 700;						// 设置字体粗细
 	_tcscpy(fontSetting.lfFaceName, _T("微软雅黑"));		// 设置字体
 	fontSetting.lfQuality = ANTIALIASED_QUALITY;		// 设置输出效果为抗锯齿  
@@ -514,7 +527,7 @@ void initStartMenu() {
 	outtextxy(((WIDTH * BLOCKSIZE) / 2) - BLOCKSIZE * 2, (HEIGHT * BLOCKSIZE) / 3, str);
 
 
-	fontSetting.lfHeight = 45;						// 设置字体高度
+	fontSetting.lfHeight = BLOCKSIZE*2;						// 设置字体高度
 	settextstyle(&fontSetting);						// 设置字体样式
 
 	//(HEIGHT * BLOCKSIZE)*0.5
@@ -525,6 +538,9 @@ void initStartMenu() {
 	_stprintf(str, _T("开始游戏"));
 	outtextxy(((WIDTH * BLOCKSIZE) / 4.5), (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 0.2, str);
 
+	//rectangle(((WIDTH * BLOCKSIZE) / 4.5) + (BLOCKSIZE * 6), ((HEIGHT * BLOCKSIZE) * 0.8) + BLOCKSIZE * 0.2, ((WIDTH * BLOCKSIZE) / 4.5),((HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 0.2));
+
+
 	_stprintf(str, _T("设置"));
 	outtextxy(((WIDTH * BLOCKSIZE) / 2) + BLOCKSIZE, (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 0.2, str);
 
@@ -534,14 +550,21 @@ void initStartMenu() {
 	_stprintf(str, _T("双人游戏"));
 	outtextxy(((WIDTH * BLOCKSIZE) / 4.5), (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 4, str);
 
-	//fillrectangle(((WIDTH * BLOCKSIZE) / 4.5), (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 4, ((WIDTH * BLOCKSIZE) / 4.5)+(BLOCKSIZE*6), ((HEIGHT * BLOCKSIZE) * 0.78 + BLOCKSIZE * 4));
+	_stprintf(str, _T("蛇蛇争霸"));
+	outtextxy(((WIDTH * BLOCKSIZE) / 2- WIDTH*0.15), (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 4, str);
 
+	//fillrectangle(((WIDTH * BLOCKSIZE) / 4.5), (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 4, ((WIDTH * BLOCKSIZE) / 4.5)+(BLOCKSIZE*6), ((HEIGHT * BLOCKSIZE) * 0.78 + BLOCKSIZE * 4));
+	rectangle(((WIDTH * BLOCKSIZE) / 2.8) + (BLOCKSIZE * 6), ((HEIGHT * BLOCKSIZE) * 0.8) + BLOCKSIZE *2, ((WIDTH * BLOCKSIZE) / 1.6), (HEIGHT * BLOCKSIZE) * 0.8 + BLOCKSIZE * 0.2);
 
 	while (1)
 	{
 		// 获取按键信息
 		input = getmessage(EX_MOUSE | EX_KEY);
+		_stprintf(str, _T("x:%05d"), input.x);
+				outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE, str);
 
+				_stprintf(str, _T("y:%05d"), input.y);
+				outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 2, str);
 		switch (input.message)
 		{
 		case WM_LBUTTONDOWN:
@@ -552,6 +575,7 @@ void initStartMenu() {
 
 				_stprintf(str, _T("y:%05d"), input.y);
 				outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 2, str);*/
+
 				cleardevice();
 				startGame();
 				return;
@@ -565,10 +589,19 @@ void initStartMenu() {
 			}
 			else if ((input.x >= ((WIDTH * BLOCKSIZE) / 4.5) && (input.x <= ((WIDTH * BLOCKSIZE) / 4.5) + (BLOCKSIZE * 6))) && ((input.y >= (HEIGHT * BLOCKSIZE) * 0.7 + BLOCKSIZE * 4) && (input.y <= ((HEIGHT * BLOCKSIZE) * 0.78) + BLOCKSIZE * 4))) {
 				cleardevice();
+				isCombat = 0;
 				startGameDouble();
 				return;
 			}
+			else if (((input.x >= ((WIDTH * BLOCKSIZE) / 2) + BLOCKSIZE / 2) && input.x <= (((WIDTH * BLOCKSIZE) / 2) + (BLOCKSIZE * 6) - BLOCKSIZE / 2)) && ((input.y >= ((HEIGHT * BLOCKSIZE) * 0.8 + BLOCKSIZE * 0.2) && (input.y <= ((HEIGHT * BLOCKSIZE) * 0.8) + BLOCKSIZE * 2)))){
+				cleardevice();
+				isCombat = 1;
+				startGameDouble();
 
+				return;
+			}
+			
+					
 		case WM_KEYDOWN:
 			if (input.vkcode == VK_ESCAPE)
 				return;	// 按 ESC 键退出程序

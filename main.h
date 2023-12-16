@@ -8,10 +8,10 @@
 #include <process.h>
 
 
-#define WIDTH 40
-#define HEIGHT 30
+#define WIDTH 50
+#define HEIGHT 40
 #define SPEED 4
-#define BLOCKSIZE 25
+#define BLOCKSIZE 20
 
 #define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1:0)
 
@@ -25,6 +25,9 @@ int fed = 0;
 int fedNum = -1;
 int speed = SPEED;
 bool bSnakeP1Continue = 0, bSnakeP2Continue = 0;
+int lengthP1 = 3;
+int lengthP2 = 3;
+bool isCombat = 0;
 
 time_t timep;
 time_t sratTimeStamp;
@@ -400,7 +403,6 @@ void showSnake(snake* snakePoint, COLORREF headColor) {
 		if (snakePoint == head) {
 			setfillcolor(headColor);
 			solidrectangle(((snakePoint->x * BLOCKSIZE) + 1), ((snakePoint->y * BLOCKSIZE) + 1), (((snakePoint->x + 1) * BLOCKSIZE) - 1), (((snakePoint->y + 1) * BLOCKSIZE) - 1));
-			Sleep(100);
 		}
 	}
 	return;
@@ -415,7 +417,16 @@ void freeSnake(snake* snakeHead) {
 }
 
 int isDeath(snake* snakeP1, snake* snakeP2) {
-
+	Sleep(1);
+	if (isCombat) {
+		if ((snakeP1->x == snakeP2->x) && (snakeP1->y == snakeP2->y)) {
+			bSnakeP1Continue = 0;
+			bSnakeP2Continue = 0;
+			gameOver(2);
+			return 3;
+		}
+	}
+	//双人争霸判断头相撞
 	snake* snakePoint;
 	for (snakePoint = snakeP1->next; snakePoint; snakePoint = snakePoint->next)
 	{
@@ -441,15 +452,23 @@ int isDeath(snake* snakeP1, snake* snakeP2) {
 		{
 			if ((snakeP1->x == snakePoint->x) && (snakeP1->y == snakePoint->y)) {
 
-				bSnakeP1Continue = 0;
-				bSnakeP2Continue = 0;
+				if(isCombat){
+				return 2;
+				}
+				else {
+					bSnakeP1Continue = 0;
+					bSnakeP2Continue = 0;
+					gameOver(2);
+					return 1;
 
-				gameOver(2);
-				return 1;
+				}
 			}
+			
 
 		}
 	}
+
+
 	return 0;
 
 }
@@ -476,6 +495,8 @@ void food() {
 			food();
 			return;
 		}
+			WaitForSingleObject(mutex, INFINITE);
+
 
 		map[x][y] = '*';
 		setfillcolor(YELLOW);
@@ -483,6 +504,8 @@ void food() {
 
 		fed = 1;
 		fedNum++;
+		ReleaseMutex(mutex);
+
 	}
 	return;
 	//在双人游戏下 ，不会随机生成
@@ -495,7 +518,7 @@ void gameBar(bool start, bool multi) {
 	TCHAR str[BLOCKSIZE];
 	LOGFONT fontSetting;
 	gettextstyle(&fontSetting);						// 获取当前字体设置
-	fontSetting.lfHeight = 27;						// 设置字体高度
+	fontSetting.lfHeight = BLOCKSIZE+ BLOCKSIZE*0.2;						// 设置字体高度
 	_tcscpy(fontSetting.lfFaceName, _T("微软雅黑"));		// 设置字体为
 	fontSetting.lfQuality = ANTIALIASED_QUALITY;		// 设置输出效果为抗锯齿  
 	settextstyle(&fontSetting);						// 设置字体样式
@@ -513,13 +536,27 @@ void gameBar(bool start, bool multi) {
 		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT, str);
 
 		_stprintf(str, _T("%d"), (nowTime - sratTimeStamp));
-		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE, str);
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE*2, str);
 
 		_stprintf(str, _T("Speed:"));
-		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 2, str);
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 4, str);
 
 		_stprintf(str, _T("%d"), speed);
-		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 3, str);
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 6, str);
+		
+		_stprintf(str, _T("P1 Length:"));
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 8, str);
+
+		_stprintf(str, _T("%d"), lengthP1);
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 10, str);
+
+		_stprintf(str, _T("P2 Length:"));
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 12, str);
+
+		_stprintf(str, _T("%d"), lengthP2);
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 14, str);
+
+
 
 		return;
 	}
@@ -540,20 +577,20 @@ void gameBar(bool start, bool multi) {
 
 
 		_stprintf(str, _T("%d"), score);
-		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE, str);
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE*2, str);
 
 		_stprintf(str, _T("Body Length:"));
-		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 2, str);
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 4, str);
 
 
 		_stprintf(str, _T("%d"), fedNum + 3);
-		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 3, str);
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 6, str);
 
 		_stprintf(str, _T("Speed:"));
-		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 4, str);
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 8, str);
 
 		_stprintf(str, _T("%d"), speed);
-		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 5, str);
+		outtextxy(WIDTH * BLOCKSIZE + 10, HEIGHT + BLOCKSIZE * 10, str);
 
 	}
 	return;
