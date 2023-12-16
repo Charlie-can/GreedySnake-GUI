@@ -28,6 +28,8 @@ bool bSnakeP1Continue = 0, bSnakeP2Continue = 0;
 int lengthP1 = 3;
 int lengthP2 = 3;
 bool isCombat = 0;
+int additionP1 = 0;
+int additionP2 = 0;
 
 time_t timep;
 time_t sratTimeStamp;
@@ -100,12 +102,9 @@ void initLine();
 /// 初始化地图
 /// 画出蛇在地图的位置
 /// </summary>
-/// <param name="x">
-/// 当x等于2时画两条
-/// x等于1时画一条
-/// 
-/// </param>
-void initSnake(int x);
+/// <param name="initP1">是否生成P1</param>
+/// <param name="initP2">是否生成P2</param>
+void initSnake(bool initP1,bool initP2);
 
 /// <summary>
 /// 更新地图数组内的蛇身位置
@@ -188,6 +187,11 @@ void gameBar(bool start, bool multi);
 void settingMenu();
 
 
+/// <summary>
+/// 清除蛇在画布上的身体
+/// </summary>
+/// <param name="snake">被清除蛇</param>
+void clearSnake(snake* snake);
 
 
 void saveSettingsBinary(const Setting* settings) {
@@ -244,8 +248,8 @@ void initLine() {
 	int x = BLOCKSIZE * WIDTH;
 	int y = BLOCKSIZE * HEIGHT;
 
-	setlinecolor(0xCAE1A4);
-	//setlinecolor(0x000000);
+	//setlinecolor(0xCAE1A4);
+	setlinecolor(0x000000);
 
 	for (int i = 0; i < HEIGHT; i++) {
 		for (int j = 0; j < WIDTH; j++)
@@ -276,12 +280,10 @@ void initLine() {
 	return;
 }
 
-void initSnake(int x) {
+void initSnake(bool initP1, bool initP2) {
 	snake* snakeBody;
 
-	switch (x)
-	{
-	case 2:
+	if (initP2) {
 		snakeHeadP2 = (snake*)malloc(sizeof(snake));
 		snakeHeadP2->x = WIDTH - 10;
 		snakeHeadP2->y = HEIGHT - 5;
@@ -311,8 +313,8 @@ void initSnake(int x) {
 			solidrectangle(((snakePoint->x * BLOCKSIZE) + 1), ((snakePoint->y * BLOCKSIZE) + 1), (((snakePoint->x + 1) * BLOCKSIZE) - 1), (((snakePoint->y + 1) * BLOCKSIZE) - 1));
 
 		}
-
-	case 1:
+	}
+	if (initP1) {
 		snakeHead = (snake*)malloc(sizeof(snake));
 		snakeHead->x = 5;
 		snakeHead->y = 5;
@@ -454,6 +456,7 @@ int isDeath(snake* snakeP1, snake* snakeP2) {
 
 				if(isCombat){
 				return 2;
+				//争霸被吃
 				}
 				else {
 					bSnakeP1Continue = 0;
@@ -594,6 +597,22 @@ void gameBar(bool start, bool multi) {
 
 	}
 	return;
+}
+
+
+void clearSnake(snake* snakes) {
+	snake* snakePoint;
+	for (snakePoint = snakes; snakePoint; snakePoint = snakePoint->next)
+	{
+		if (snakePoint != snakes) {
+			setfillcolor(RGB(164, 225, 202));
+			map[snakePoint->y][snakePoint->x] = ' ';
+
+		}
+		solidrectangle(((snakePoint->x * BLOCKSIZE) + 1), ((snakePoint->y * BLOCKSIZE) + 1), (((snakePoint->x + 1) * BLOCKSIZE) - 1), (((snakePoint->y + 1) * BLOCKSIZE) - 1));
+		Sleep(100);
+	}
+
 }
 
 void settingMenu() {

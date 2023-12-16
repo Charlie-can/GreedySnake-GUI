@@ -147,7 +147,6 @@ DWORD WINAPI gameP1(LPVOID pm ) {
 		snakePoint->x = snakeHead->x;
 		snakePoint->y = snakeHead->y;
 
-		Sleep(1000 / speed);
 
 		if (KEY_DOWN(65))
 			input = 'a';
@@ -159,6 +158,12 @@ DWORD WINAPI gameP1(LPVOID pm ) {
 			input = 'd';
 		else if (KEY_DOWN('Z'))
 			input = input;
+
+		if (KEY_DOWN('J'))
+			Sleep(100);
+
+
+		Sleep(1000 / speed);
 
 		/*if (input != 'w' && input != 'a' && input != 's' && input != 'd') {
 			input = lastInput;
@@ -222,7 +227,30 @@ DWORD WINAPI gameP1(LPVOID pm ) {
 		}
 
 		updateMap(snakeHead, 0);
-		if (map[snakePoint->y][snakePoint->x] == '*') {
+
+
+		if (additionP1 > 0) {
+
+			additionP1--;
+			snake* snakePoints;
+
+			for (snakePoints = snakeHead; snakePoints->next; snakePoints = snakePoints->next)
+			{
+				if (snakePoints == snakeHead) {
+
+					WaitForSingleObject(mutex, INFINITE);
+
+					setfillcolor(0xffffff);
+					solidrectangle(((snakePoints->x * BLOCKSIZE) + 1), ((snakePoints->y * BLOCKSIZE) + 1), (((snakePoints->x + 1) * BLOCKSIZE) - 1), (((snakePoints->y + 1) * BLOCKSIZE) - 1));
+					lengthP1++;
+					ReleaseMutex(mutex);
+					//Sleep(100);
+
+				}
+			}
+		}
+		else if (map[snakePoint->y][snakePoint->x] == '*') {
+
 
 			snake* snakePoints;
 
@@ -242,12 +270,13 @@ DWORD WINAPI gameP1(LPVOID pm ) {
 
 				}
 			}
-			WaitForSingleObject(mutex, INFINITE);
 
+			
+			WaitForSingleObject(mutex, INFINITE);
 			fed = 0;
 			map[snakePoint->y][snakePoint->x] = ' ';
 			ReleaseMutex(mutex);
-
+			
 		}
 		else {
 			WaitForSingleObject(mutex, INFINITE);
@@ -278,6 +307,14 @@ DWORD WINAPI gameP1(LPVOID pm ) {
 		WaitForSingleObject(mutex, INFINITE);
 
 		if (isDeath(snakeHead, snakeHeadP2)==2) {
+			clearSnake(snakeHead);
+			freeSnake(snakeHead);
+			initSnake(1, 0);
+			additionP2 += lengthP1-1;
+			additionP1 = 0;
+			ReleaseMutex(mutex);
+			gameHandleP1 = CreateThread(NULL, 0, gameP1, NULL, 1, NULL);
+			WaitForSingleObject(gameHandleP1, INFINITE);
 			return 0;
 
 		}else if (isDeath(snakeHead, snakeHeadP2)) {
@@ -304,7 +341,6 @@ DWORD WINAPI gameP2(LPVOID pm) {
 		snakePointP2->y = snakeHeadP2->y;
 
 
-		Sleep(1000 / speed);
 
 
 		if (KEY_DOWN(LEFT))
@@ -317,7 +353,11 @@ DWORD WINAPI gameP2(LPVOID pm) {
 			inputP2 = DOWN;
 		else if (KEY_DOWN('Z'))
 			inputP2 = inputP2;
+		
+		if (KEY_DOWN(96))
+			Sleep(100);
 
+		Sleep(1000 / speed);
 
 		switch (inputP2)
 		{
@@ -374,8 +414,31 @@ DWORD WINAPI gameP2(LPVOID pm) {
 
 
 		updateMap(snakeHeadP2, 0);
-		//Sleep(100);
-		if (map[snakePointP2->y][snakePointP2->x] == '*') {
+
+
+		if (additionP2 > 0) {
+			additionP2--;
+
+			snake* snakePointsP2;
+
+			for (snakePointsP2 = snakeHeadP2; snakePointsP2->next; snakePointsP2 = snakePointsP2->next)
+			{
+				if (snakePointsP2 == snakeHeadP2) {
+
+					WaitForSingleObject(mutex, INFINITE);
+					//setfillcolor(0xFC5633);
+
+					setfillcolor(0xFC5633);
+					solidrectangle(((snakePointsP2->x * BLOCKSIZE) + 1), ((snakePointsP2->y * BLOCKSIZE) + 1), (((snakePointsP2->x + 1) * BLOCKSIZE) - 1), (((snakePointsP2->y + 1) * BLOCKSIZE) - 1));
+					lengthP2++;
+					ReleaseMutex(mutex);
+					//Sleep(100);
+				}
+			}
+
+
+		}
+		else if (map[snakePointP2->y][snakePointP2->x] == '*') {
 
 			snake* snakePointsP2;
 
@@ -436,7 +499,14 @@ DWORD WINAPI gameP2(LPVOID pm) {
 		
 		{
 			 if(isDeath(snakeHeadP2, snakeHead)==2){
-
+				 clearSnake(snakeHeadP2);
+				 freeSnake(snakeHeadP2);
+				 initSnake(0, 1);
+				 additionP1 += lengthP2-1;
+				 additionP2 = 0;
+				 ReleaseMutex(mutex);
+				 gameHandleP2 = CreateThread(NULL, 0, gameP2, NULL, 1, NULL);
+				 WaitForSingleObject(gameHandleP2, INFINITE);
 				 return 0;
 			 }
 
@@ -461,7 +531,7 @@ void startGame() {
 	speed = SPEED;
 	initMap();
 	initLine();
-	initSnake(1);
+	initSnake(1,0);
 	gameBar(1,0);
 	game();
 	return;
@@ -478,7 +548,7 @@ void startGameDouble() {
 
 	initMap();
 	initLine();
-	initSnake(2);
+	initSnake(1,1);
 
 	mutex = CreateMutex(NULL, FALSE, NULL);
 
