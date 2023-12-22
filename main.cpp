@@ -155,7 +155,6 @@ DWORD WINAPI gameP1(LPVOID pm ) {
 		snakePoint->x = snakeHead->x;
 		snakePoint->y = snakeHead->y;
 
-		Sleep(1000 / speed);
 
 
 		if (KEY_DOWN(65))
@@ -350,7 +349,6 @@ DWORD WINAPI gameP2(LPVOID pm) {
 		snakePointP2->y = snakeHeadP2->y;
 
 
-		Sleep(1000 / speed);
 
 
 		if (KEY_DOWN(LEFT))

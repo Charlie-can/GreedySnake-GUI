@@ -229,6 +229,11 @@ void settingMenu();
 /// <param name="snake">被清除蛇</param>
 void clearSnake(snake* snake);
 
+/// <summary>
+/// 清除蛇在画布上的身体
+/// </summary>
+/// <param name="snake">被清除蛇</param>
+void clearSnake(snake* snake);
 
 
 void saveSettingsBinary(const Setting* settings) {
@@ -682,7 +687,6 @@ void clearSnake(snake* snakes) {
 	}
 
 }
-
 
 void settingMenu() {
 	//设置菜单
